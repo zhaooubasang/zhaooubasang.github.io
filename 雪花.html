@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>雪花</title>
+  <style type="text/css">
+    * { margin:0; padding:0; }
+    html, body { width:100%; height:100%; overflow: hidden;}
+    canvas { display:block; }
+    #controls {
+      margin: 20px;
+      position: absolute;
+      top: 0; left: 0;
+      color: white;
+    }
+    </style>
+</head>
+<body>
+<script type="text/javascript">
+  var flakes = [];
+  var save = [];
+  var xMod = 0;
+  var singleMode = false;
+  var rate = .2;
+
+
+  function Flake(size, x, y){
+    this.x = x?x:(random()*1.5 - .25)*width;
+    this.y = y?y:-size;
+    this.speed = size/15;  //控制雪花竖直下落的下落速度
+    this.selected = false;
+    this.height = floor(size/4);
+    this.width = floor(this.height*0.932);//定义雪花的大小
+    this.g = createGraphics(this.width, this.height);
+    init(this.g, this.width, this.height);
+
+    this.tick = function(){
+      this.y += this.speed;
+      this.x += xMod*this.speed/1;  //控制雪花水平飘浮的位移大小
+    }
+   //    设置雪花的形状及样式
+    this.render = function(){
+      push();
+      translate(this.x, this.y);
+      for (var i = 0; i < 6; i++){
+        push();
+        rotate(PI*i/3);     // 控制雪花的瓣数
+        image(this.g, 0, 0);
+        scale(-1, 1);       // 控制雪花花瓣的角度
+        image(this.g, 0, 0);
+        pop();
+      }
+      pop();
+    }
+  }
+   // 设置雪花的颜色及透明度
+  function init(g, w, h){
+    g.background(0);
+    g.noStroke();
+    var s = w/60 + .5;
+    g.fill(170*s, 220*s, 255*s);
+    g.triangle(0, 0, w, 0, w, h);
+    g.fill(0);
+    g.triangle(w, 0, w, h, w*.8, h);
+    g.triangle(w/2, h/2, w, h*random(), w, h);
+    for (var i =0; i < 10; i++){
+      g.triangle(random()*w, random()*h,
+        random()*w, random()*h,
+        random()*w, random()*h);
+    }
+    g.loadPixels();
+    for (var i = 0; i < w; i++){
+      for (var j = 0; j < h; j++){
+        var p = (i+j*w)*4;
+        g.pixels[p+3] = g.pixels[p+2]; //  控制雪花的透明度
+      }
+    }
+    g.updatePixels();
+  }
+
+  //  设置背景颜色
+  function setup(){
+    createCanvas();
+    colorMode(HSB, 360, 100, 100, 100);
+    ellipseMode(CENTER);
+    textAlign(LEFT, TOP)
+    textSize(200);
+    windowResized();
+  }
+
+  function draw(){
+    background(200, 100, 10);
+    noStroke();
+    xMod = sin(frameCount/1000);
+
+    for (var i = 0; i < flakes.length; i++){
+      var f = flakes[i];
+      if (!singleMode) f.tick();
+      f.render();
+      if (f.y - f.width > height){
+        flakes.splice(i, 1);
+        i--;
+      }
+    }
+
+    if (!singleMode && random() < .6){    //  设置下落雪花的数量
+      flakes.push(new Flake(pow(random(), 2)*30 + 30)); // 设置每一层雪花的大小，
+    }
+
+    if (singleMode){
+      push();
+      fill(100);
+      text("space: create a new snowflake\n" +
+        "other: exit", 10, 50);
+      pop();
+    }
+  }
+
+  function keyPressed(){
+    if (keyCode == 32){
+      if (!singleMode) save = flakes;
+      flakes = [];
+      flakes.push(new Flake(min(width, height)*.500, width/20, height/2));
+      singleMode = true;
+    } else {
+      if (singleMode) flakes = save;
+      singleMode = false;
+    }
+  }
+
+  function windowResized() {
+    resizeCanvas(windowWidth, windowHeight);
+    pixelDensity(1);
+    flakes = [];
+    flakes.push(new Flake(50));
+  }
+  </script>
+<script src="https://cdn.bootcss.com/p5.js/0.5.16/p5.min.js"></script>
+<div id="controls">
+</div>
+</body>
+</html>
